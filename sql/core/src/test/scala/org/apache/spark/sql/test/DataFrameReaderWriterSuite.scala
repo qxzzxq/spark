@@ -824,6 +824,25 @@ class DataFrameReaderWriterSuite extends QueryTest with SharedSQLContext with Be
     }
   }
 
+  test("SPARK-31968: handle duplicated partition columns") {
+    withTempDir { dir =>
+      val columnNames = Array("col1", "col2", "col3", "col4")
+      val df: DataFrame = Seq(
+        (1, "p1", "c1", 1L),
+        (2, "p2", "c2", 2L),
+        (2, "p1", "c2", 2L),
+        (3, "p3", "c3", 3L),
+        (3, "p2", "c3", 3L),
+        (3, "p3", "c3", 3L)
+      ).toDF(columnNames: _*)
+      df.write
+        .partitionBy("col1", "col1")  // we have "col1" twice
+        .mode(SaveMode.Overwrite)
+        .csv(dir.getCanonicalPath)
+      assert(spark.read.csv(dir.getCanonicalPath).columns.sameElements(columnNames))
+    }
+  }
+
   test("Insert overwrite table command should output correct schema: basic") {
     withTable("tbl", "tbl2") {
       withView("view1") {

@@ -185,7 +185,7 @@ final class DataFrameWriter[T] private[sql](ds: Dataset[T]) {
    */
   @scala.annotation.varargs
   def partitionBy(colNames: String*): DataFrameWriter[T] = {
-    this.partitioningColumns = Option(colNames)
+    this.partitioningColumns = Option(colNames.distinct)
     this
   }
 
